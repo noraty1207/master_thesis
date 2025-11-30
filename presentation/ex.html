@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Proposal: Trajectory RSA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+            "lucide-react": "https://esm.sh/lucide-react@0.263.1",
+            "recharts": "https://esm.sh/recharts@2.12.0"
+        }
+    }
+    </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up {
+            animation: fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        
+        /* Math/Code font style */
+        .font-math {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+            ChevronRight, ChevronLeft, Clock, Activity, Type, Brain, 
+            Play, ArrowRight, FileText, CheckCircle, AlertCircle, 
+            GitCommit, TrendingUp, Layers, Move 
+        } from 'lucide-react';
+        import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ScatterChart, Scatter, ZAxis } from 'recharts';
+
+        const SlideDeck = () => {
+          const [currentSlide, setCurrentSlide] = useState(0);
+
+          const slides = [
+            { component: TitleSlide, title: "タイトル" },
+            { component: OverviewSlide, title: "実験概要・目的" },
+            { component: RSAConceptSlide, title: "RSA解析の基本アイデア" },
+            { component: Exp0DetailSlide, title: "Exp0: 刺激選定 (流暢性課題)" },
+            { component: Exp0LogicSlide, title: "Exp0: 選定ロジック" },
+            { component: Exp1FlowSlide, title: "Exp1: ERP シーケンス" },
+            { component: Exp1ConditionSlide, title: "Exp1: 条件設定詳細" },
+            // --- Exp2 Updated to VECTOR/Trajectory Concept ---
+            { component: Exp2VectorConceptSlide, title: "Exp2: 文の意味軌跡 (Trajectory)" },
+            { component: Exp2MetricsSlide, title: "Exp2: 軌跡の特徴量抽出" },
+            { component: Exp2RSATrajectorySlide, title: "Exp2: Trajectory RSA 仮説" },
+            // -------------------------------------------------
+            { component: SummarySlide, title: "まとめと展望" },
+          ];
+
+          const nextSlide = () => {
+            setCurrentSlide((prev) => Math.min(prev + 1, slides.length - 1));
+          };
+
+          const prevSlide = () => {
+            setCurrentSlide((prev) => Math.max(prev - 1, 0));
+          };
+
+          useEffect(() => {
+            const handleKeyDown = (e) => {
+              if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+              if (e.key === 'ArrowLeft') prevSlide();
+            };
+            window.addEventListener('keydown', handleKeyDown);
+            return () => window.removeEventListener('keydown', handleKeyDown);
+          }, []);
+
+          const CurrentComponent = slides[currentSlide].component;
+
+          return (
+            <div className="flex flex-col h-screen bg-slate-50 text-slate-800 overflow-hidden selection:bg-indigo-100">
+              {/* Progress Bar */}
+              <div className="h-1.5 bg-slate-200 w-full fixed top-0 z-50">
+                <div 
+                  className="h-full bg-indigo-600 transition-all duration-500 ease-out shadow-[0_0_10px_rgba(79,70,229,0.5)]"
+                  style={{ width: `${((currentSlide + 1) / slides.length) * 100}%` }}
+                />
+              </div>
+
+              {/* Main Content Area */}
+              <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 relative">
+                <div key={currentSlide} className="w-full max-w-7xl h-full flex flex-col justify-center animate-slide-up">
+                  <CurrentComponent />
+                </div>
+              </main>
+
+              {/* Footer Controls */}
+              <footer className="h-16 bg-white/80 backdrop-blur-md border-t border-slate-200 flex items-center justify-between px-8 z-10 flex-shrink-0">
+                <div className="flex items-center gap-4">
+                    <div className="text-slate-400 text-xs font-mono">
+                        SLIDE {String(currentSlide + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
+                    </div>
+                    <div className="h-4 w-[1px] bg-slate-300"></div>
+                    <div className="text-slate-600 text-sm font-bold truncate max-w-md">
+                        {slides[currentSlide].title}
+                    </div>
+                </div>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={prevSlide}
+                    disabled={currentSlide === 0}
+                    className="p-2 rounded-full hover:bg-slate-100 disabled:opacity-30 text-slate-600 transition-all hover:scale-110 active:scale-95"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                  <button 
+                    onClick={nextSlide}
+                    disabled={currentSlide === slides.length - 1}
+                    className="p-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-lg hover:shadow-indigo-200 hover:scale-110 active:scale-95"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+                </div>
+              </footer>
+            </div>
+          );
+        };
+
+        // --- Slide Components ---
+
+        const TitleSlide = () => (
+          <div className="text-center space-y-10 h-full flex flex-col justify-center items-center">
+            <div className="relative">
+                <div className="absolute inset-0 bg-indigo-200 rounded-full blur-3xl opacity-30 animate-pulse"></div>
+                <div className="relative inline-flex p-8 rounded-3xl bg-white shadow-2xl text-indigo-600 mb-6 border border-indigo-50">
+                    <Brain size={100} strokeWidth={1} />
+                </div>
+            </div>
+            
+            <div className="space-y-4 max-w-4xl">
+                <h1 className="text-5xl md:text-6xl font-black text-slate-900 leading-tight tracking-tight">
+                意味空間の<span className="text-indigo-600">軌跡 (Trajectory)</span> としての<br/>言語処理メカニズム
+                </h1>
+                <p className="text-2xl text-slate-500 font-light tracking-wide">
+                個人化された意味マップと EEG-RSA による<br/>
+                予測誤差・逸脱検知の幾何学的検証
+                </p>
+            </div>
+
+            <div className="pt-12 grid grid-cols-3 gap-12 w-full max-w-3xl">
+              {[
+                  {icon: Type, label: "Exp 0", sub: "Semantic Fluency"},
+                  {icon: Activity, label: "Exp 1", sub: "Word N400 & RSA"},
+                  {icon: TrendingUp, label: "Exp 2", sub: "Sentence Trajectory"}
+              ].map((item, i) => (
+                  <div key={i} className="flex flex-col items-center gap-3 group cursor-default">
+                    <div className="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 group-hover:border-indigo-300 group-hover:shadow-md transition-all">
+                        <item.icon size={28} className="text-slate-400 group-hover:text-indigo-600 transition-colors"/>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-sm font-bold text-slate-700">{item.label}</div>
+                        <div className="text-xs text-slate-400">{item.sub}</div>
+                    </div>
+                  </div>
+              ))}
+            </div>
+          </div>
+        );
+
+        const OverviewSlide = () => (
+          <div className="space-y-8 h-full flex flex-col justify-center">
+            <div className="space-y-4">
+              <h2 className="text-3xl font-bold border-l-8 border-indigo-600 pl-6 text-slate-800">実験全体の構成</h2>
+              <p className="text-lg text-slate-600 max-w-4xl leading-relaxed">
+                本研究では、単語レベルの静的な意味処理 (Exp 1) と、文脈形成に伴う動的な意味構築プロセス (Exp 2) を、
+                <span className="font-bold text-slate-800">「表象空間上の幾何学的距離」</span>
+                として統一的に検証する。
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 min-h-[24rem]">
+              {[
+                { 
+                  id: "Exp 0", 
+                  title: "Personalization", 
+                  sub: "刺激選定 (VFT)",
+                  desc: "被験者個人の意味ネットワーク構造（流暢性）を測定し、後のRSA解析における「行動モデルRDM」の基盤とする。", 
+                  metrics: "Output: 個人化単語セット, IKI距離",
+                  color: "border-slate-200"
+                },
+                { 
+                  id: "Exp 1", 
+                  title: "Word Recognition", 
+                  sub: "単語N400 & RSA",
+                  desc: "同一カテゴリの反復によるプライミング効果を測定。N400成分が「意味的距離（IKI/Cosine）」を反映しているかを検証。", 
+                  metrics: "Focus: Static Semantic Distance",
+                  color: "border-blue-200"
+                },
+                { 
+                  id: "Exp 2", 
+                  title: "Sentence Trajectory", 
+                  sub: "文脈RSA & Vector解析",
+                  desc: "文を「意味空間上の軌跡」として捉え、予測（Canonical Trajectory）からの逸脱度とN400/P600の関係を明らかにする。", 
+                  metrics: "Focus: Dynamic Trajectory & Deviation",
+                  color: "border-indigo-400 ring-2 ring-indigo-50"
+                },
+              ].map((item) => (
+                <div key={item.id} className={`bg-white p-8 rounded-2xl shadow-lg border ${item.color} flex flex-col relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-400">{item.id}</span>
+                    <div className={`w-2 h-2 rounded-full ${item.id === 'Exp 2' ? 'bg-indigo-500' : 'bg-slate-300'}`}></div>
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-800 mb-1">{item.title}</h3>
+                  <p className="text-sm font-bold text-indigo-600 mb-4">{item.sub}</p>
+                  <p className="text-slate-600 leading-relaxed text-sm flex-1">{item.desc}</p>
+                  <div className="mt-6 pt-4 border-t border-slate-100 text-xs font-bold text-slate-500 flex items-center gap-2">
+                    <Activity size={14} /> {item.metrics}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+        const RSAConceptSlide = () => (
+          <div className="space-y-8 h-full flex flex-col justify-center">
+            <h2 className="text-3xl font-bold border-l-8 border-indigo-600 pl-6 text-slate-800">
+              表象類似性解析 (RSA) の基本アイデア
+            </h2>
+
+            <div className="flex gap-8 items-stretch h-[400px]">
+                {/* Visual Diagram */}
+                <div className="flex-1 bg-white rounded-2xl shadow-inner border border-slate-200 p-6 relative">
+                    <div className="absolute top-4 left-4 font-bold text-slate-400 text-sm">CONCEPTUAL FLOW</div>
+                    
+                    <div className="flex flex-col h-full justify-between py-8 px-4">
+                        {/* Brain */}
+                        <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center border border-slate-300">
+                                <Activity className="text-slate-600"/>
+                            </div>
+                            <div className="flex-1">
+                                <div className="text-sm font-bold text-slate-800">Brain Data (EEG)</div>
+                                <div className="h-2 w-full bg-slate-100 rounded mt-1 overflow-hidden">
+                                    <div className="h-full bg-slate-400 w-2/3"></div>
+                                </div>
+                            </div>
+                            <ArrowRight className="text-slate-300"/>
+                            <div className="w-24 h-24 border-2 border-indigo-500 bg-indigo-50 rounded grid grid-cols-4 gap-1 p-1">
+                                {Array.from({length:16}).map((_,i)=><div key={i} className="bg-indigo-200 rounded-sm opacity-50"></div>)}
+                                <div className="absolute inset-0 flex items-center justify-center text-indigo-800 font-bold text-xs">EEG RDM</div>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-center text-slate-400 text-sm italic">Compare (Correlation)</div>
+
+                        {/* Model */}
+                        <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center border border-slate-300">
+                                <Layers className="text-slate-600"/>
+                            </div>
+                            <div className="flex-1">
+                                <div className="text-sm font-bold text-slate-800">Model (Behavior/LLM)</div>
+                                <div className="h-2 w-full bg-slate-100 rounded mt-1 overflow-hidden">
+                                    <div className="h-full bg-indigo-400 w-3/4"></div>
+                                </div>
+                            </div>
+                            <ArrowRight className="text-slate-300"/>
+                            <div className="w-24 h-24 border-2 border-emerald-500 bg-emerald-50 rounded grid grid-cols-4 gap-1 p-1">
+                                {Array.from({length:16}).map((_,i)=><div key={i} className="bg-emerald-200 rounded-sm opacity-50"></div>)}
+                                <div className="absolute inset-0 flex items-center justify-center text-emerald-800 font-bold text-xs">Model RDM</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Explanation */}
+                <div className="flex-1 space-y-6 py-4">
+                    <p className="text-lg text-slate-600 leading-relaxed">
+                        刺激ペア間の「距離（非類似度）」のパターンを比較することで、
+                        脳活動がどのような情報をコードしているかを推定する。
+                    </p>
+                    <div className="space-y-4">
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                            <h4 className="font-bold text-indigo-600 mb-2 text-sm uppercase">1. EEG-RDM (Data)</h4>
+                            <p className="text-sm text-slate-600">
+                                各条件（単語/文）のEEGパターン間の距離（Crossnobis距離など）を計算。
+                                <br/>Time-resolved RSAにより、情報の推移を追跡。
+                            </p>
+                        </div>
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                            <h4 className="font-bold text-emerald-600 mb-2 text-sm uppercase">2. Model-RDM (Hypothesis)</h4>
+                            <p className="text-sm text-slate-600">
+                                仮説に基づく距離行列。
+                                <ul className="list-disc list-inside mt-1 ml-2 text-xs text-slate-500">
+                                    <li>意味的距離 (Word2Vec, BERT)</li>
+                                    <li>カテゴリ構造 (0/1)</li>
+                                    <li>軌跡の逸脱度 (Trajectory Deviation) ★Exp2</li>
+                                </ul>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+        );
+
+        const Exp0DetailSlide = () => (
+          <div className="space-y-6 h-full flex flex-col justify-center">
+            <h2 className="text-3xl font-bold border-l-8 border-indigo-600 pl-6 text-slate-800">Exp 0: 刺激選定（言語流暢性課題）</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <div className="space-y-6">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div className="flex items-center gap-3 mb-4 text-indigo-600">
+                        <FileText size={24} />
+                        <h3 className="font-bold text-lg">実験プロトコル</h3>
+                    </div>
+                    <ul className="space-y-4 text-slate-600">
+                        <li className="flex gap-3">
+                            <span className="w-16 font-bold text-slate-800 text-sm flex-shrink-0">Task</span>
+                            <span className="text-sm">カテゴリー流暢性課題 (Verbal Fluency Task)</span>
+                        </li>
+                        <li className="flex gap-3">
+                            <span className="w-16 font-bold text-slate-800 text-sm flex-shrink-0">Env</span>
+                            <span className="text-sm">被験者自身の使い慣れたPC・キーボード</span>
+                        </li>
+                        <li className="flex gap-3">
+                            <span className="w-16 font-bold text-slate-800 text-sm flex-shrink-0">Limit</span>
+                            <span className="text-sm">各カテゴリ 3分間 / 連続タイピング</span>
+                        </li>
+                        <li className="flex gap-3">
+                            <span className="w-16 font-bold text-slate-800 text-sm flex-shrink-0">Cats</span>
+                            <div className="flex gap-2 flex-wrap">
+                                {["動物", "人", "道具", "場所"].map(c => (
+                                <span key={c} className="bg-slate-100 px-2 py-0.5 rounded text-xs border border-slate-200 font-bold text-slate-600">{c}</span>
+                                ))}
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div className="bg-indigo-50 p-5 rounded-xl text-sm text-indigo-900 border border-indigo-100 leading-relaxed">
+                  <p className="font-bold mb-2 flex items-center gap-2"><Brain size={16}/> 活性化拡散モデルの仮定</p>
+                  意味ネットワーク上で強く結びついた単語ほど、素早く連続して想起される。
+                  ここでの <strong>IKI (Inter-Keystroke Interval)</strong> を、
+                  被験者固有の「意味的距離」の指標として利用する。
+                </div>
+              </div>
+
+              <div className="flex flex-col justify-center bg-white p-8 rounded-2xl shadow-lg border border-slate-100 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-5">
+                    <Clock size={120} />
+                </div>
+                <h3 className="text-center font-bold text-slate-500 mb-8 text-sm uppercase tracking-widest">Measurement Logic</h3>
+                <div className="relative min-h-[20rem] border-l-4 border-slate-200 ml-8 pl-8 flex flex-col justify-between py-2">
+                    {/* Timeline Events */}
+                    <div className="relative">
+                        <div className="absolute -left-[3.25rem] top-1 w-6 h-6 bg-slate-800 rounded-full flex items-center justify-center text-white text-xs z-10 font-bold">1</div>
+                        <div className="text-xl font-bold text-slate-800">"犬" <span className="text-xs text-slate-400 font-normal">Enter</span></div>
+                    </div>
+
+                    <div className="flex-1 border-l-2 border-indigo-400 border-dashed ml-[-2rem] my-2 relative">
+                        <div className="absolute top-1/2 left-6 -translate-y-1/2 bg-indigo-100 text-indigo-700 px-4 py-1.5 rounded-full text-sm font-bold shadow-sm">
+                            IKI: 650 ms
+                        </div>
+                        <div className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-3 bg-indigo-500 rounded-full"></div>
+                    </div>
+
+                    <div className="relative">
+                        <div className="absolute -left-[3.25rem] top-1 w-6 h-6 bg-slate-800 rounded-full flex items-center justify-center text-white text-xs z-10 font-bold">2</div>
+                        <div className="text-xl font-bold text-slate-800">"猫" <span className="text-xs text-slate-400 font-normal">Start Typing</span></div>
+                    </div>
+                    
+                    <div className="mt-6 pt-4 border-t border-slate-100 text-center">
+                        <p className="text-sm text-slate-500">Short IKI = <span className="font-bold text-indigo-600">High Semantic Proximity</span></p>
+                    </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+        const Exp0LogicSlide = () => (
+          <div className="space-y-8 h-full flex flex-col justify-center">
+            <h2 className="text-3xl font-bold border-l-8 border-indigo-600 pl-6 text-slate-800">Exp 0: 選定ロジック</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center"><Layers size={18}/></div>
+                    Filtering
+                </h3>
+                <ul className="space-y-3 text-slate-600 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle size={18} className="text-green-500 mt-1 flex-shrink-0" />
+                    <div><span className="font-bold text-slate-800">誤字修正・重複削除:</span><br/><span className="text-sm">解析ノイズとなる入力をクリーニング。</span></div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle size={18} className="text-green-500 mt-1 flex-shrink-0" />
+                    <div><span className="font-bold text-slate-800">外れ値除外:</span><br/><span className="text-sm">思考中断と思われる極端な長遅延を除外。</span></div>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center"><TrendingUp size={18}/></div>
+                    Selection
+                </h3>
+                <div className="bg-white p-6 rounded-2xl shadow-lg border border-indigo-100 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-indigo-50 to-transparent rounded-bl-full -mr-4 -mt-4"></div>
+                  <div className="flex items-center justify-between mb-4 relative z-10">
+                    <span className="font-bold text-lg text-slate-700">Top 10 / Category</span>
+                    <span className="bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full">Total 40 Words</span>
+                  </div>
+                  <p className="text-slate-600 mb-4 text-sm relative z-10">
+                    IKIの中央値が小さい（＝アクセスしやすい）順にランク付けし、上位を採用。
+                    これらは被験者にとっての「コア概念」とみなせる。
+                  </p>
+                  <div className="bg-slate-800 p-3 rounded-lg text-xs font-mono text-green-400 shadow-inner relative z-10">
+                    > selected_words = df.sort_values('median_iki').head(10)
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-slate-100 rounded-xl p-4 flex items-center gap-4 text-slate-600 text-sm border border-slate-200">
+                <AlertCircle className="text-slate-400 flex-shrink-0" />
+                <p>
+                    選定された40単語間のIKI距離行列は、Exp 1およびExp 2において
+                    <span className="font-bold text-slate-800">「行動ベースの個人化モデルRDM」</span>
+                    として使用される。
+                </p>
+            </div>
+          </div>
+        );
+
+        const Exp1FlowSlide = () => (
+          <div className="space-y-6 h-full flex flex-col justify-center">
+            <h2 className="text-3xl font-bold border-l-8 border-indigo-600 pl-6 text-slate-800">Exp 1: シーケンス詳細 (ERP)</h2>
+            <p className="text-slate-600">標準的な視覚提示パラダイムを採用し、予測効果（CNV等）の混入を防ぐため、Fixationの期間にジッターを設ける。</p>
+
+            <div className="bg-white p-12 rounded-2xl shadow-xl mt-6 overflow-hidden border border-slate-100 relative">
+              <div className="flex items-center justify-center gap-4 min-w-full">
+                
+                {/* 1. Fixation (Start) */}
+                <div className="relative group flex flex-col items-center">
+                  <div className="w-40 h-32 bg-slate-50 text-slate-800 flex flex-col items-center justify-center text-4xl rounded-xl border-2 border-slate-200 shadow-sm relative overflow-hidden">
+                    +
+                    <div className="absolute top-2 left-2 text-[10px] font-bold text-slate-400 bg-slate-100 px-1 rounded">FIXATION</div>
+                  </div>
+                  <div className="mt-4 text-center">
+                    <div className="font-mono text-slate-500 font-bold">500 ± 100 ms</div>
+                    <div className="text-xs text-slate-400 mt-1">Jittered Baseline</div>
+                  </div>
+                </div>
+
+                <ArrowRight className="text-slate-300" size={32}/>
+
+                {/* 2. Stimulus */}
+                <div className="relative group flex flex-col items-center">
+                  <div className="w-56 h-32 bg-slate-800 text-white flex flex-col items-center justify-center rounded-xl shadow-2xl border-b-8 border-slate-600 relative overflow-hidden transform group-hover:scale-105 transition-transform">
+                    <div className="absolute top-2 right-2 text-[10px] text-slate-400 border border-slate-600 px-1 rounded">TARGET</div>
+                    <span className="text-3xl font-bold tracking-widest">単語</span>
+                    <span className="text-xs text-slate-500 mt-2">(例: 犬)</span>
+                    
+                    {/* Measurement Window Indicator */}
+                    <div className="absolute bottom-0 left-0 w-full h-1 bg-indigo-500"></div>
+                  </div>
+                  <div className="mt-4 text-center relative w-full">
+                    <div className="font-mono text-indigo-600 font-bold text-lg">700 ms</div>
+                    <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full font-bold whitespace-nowrap shadow-sm border border-indigo-200">
+                        N400 Analysis Window
+                    </div>
+                  </div>
+                </div>
+
+                <ArrowRight className="text-slate-300" size={32}/>
+
+                {/* 3. Blank */}
+                <div className="relative group flex flex-col items-center">
+                  <div className="w-32 h-32 bg-slate-100 text-slate-400 flex items-center justify-center text-sm rounded-xl border-2 border-dashed border-slate-300">
+                    (Blank)
+                  </div>
+                  <div className="mt-4 text-center">
+                    <div className="font-mono text-slate-500 font-bold">300 ms</div>
+                    <div className="text-xs text-slate-400 mt-1">ITI</div>
+                  </div>
+                </div>
+
+                <div className="text-slate-300 italic font-medium ml-4 self-center">Next Trial...</div>
+              </div>
+            </div>
+          </div>
+        );
+
+        const Exp1ConditionSlide = () => (
+          <div className="space-y-8 h-full flex flex-col justify-center">
+            <h2 className="text-3xl font-bold border-l-8 border-indigo-600 pl-6 text-slate-800">Exp 1: 条件設定詳細</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-white p-8 rounded-2xl shadow-md border border-slate-100">
+                <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-800 border-b pb-2">
+                  <Activity className="text-indigo-600"/> 刺激パラメータ
+                </h3>
+                <table className="w-full text-left text-sm">
+                  <tbody className="divide-y divide-slate-100">
+                    <tr>
+                      <td className="py-4 text-slate-500 font-medium">刺激単語数</td>
+                      <td className="py-4 font-bold text-right text-slate-800">40 単語</td>
+                      <td className="py-4 text-xs text-slate-400 pl-2">(4カテゴリ × 10語)</td>
+                    </tr>
+                    <tr>
+                      <td className="py-4 text-slate-500 font-medium">繰り返し回数</td>
+                      <td className="py-4 font-bold text-right text-slate-800">20 回 / 語</td>
+                      <td className="py-4 text-xs text-slate-400 pl-2">S/N比確保のため</td>
+                    </tr>
+                    <tr className="bg-indigo-50/50">
+                      <td className="py-4 text-indigo-700 font-bold pl-2">総試行数</td>
+                      <td className="py-4 font-bold text-right text-2xl text-indigo-700">800</td>
+                      <td className="py-4 text-xs text-indigo-400 pl-2">Trials</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="bg-white p-8 rounded-2xl shadow-md border border-slate-100">
+                <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-800 border-b pb-2">
+                  <Layers className="text-indigo-600"/> カテゴリー連続性操作
+                </h3>
+                <div className="space-y-4">
+                  <p className="text-slate-600 text-sm leading-relaxed">
+                    同一カテゴリの連続提示（Semantic Priming）によるN400減衰効果を利用する。
+                    固定周期ではなくランダムな連続長にすることで、明示的な予測を防ぐ。
+                  </p>
+                  
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mt-2">
+                    <div className="flex justify-between items-center mb-3">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sequence Example</span>
+                        <span className="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded text-slate-500">Run Length: 2-4 (Random)</span>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2 items-center justify-center">
+                      <div className="flex gap-1 p-1 bg-white rounded border border-red-100 shadow-sm">
+                        {['動物','動物','動物'].map((t,i)=><span key={i} className="w-10 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold text-center block">{t}</span>)}
+                      </div>
+                      <ArrowRight size={12} className="text-slate-300"/>
+                      <div className="flex gap-1 p-1 bg-white rounded border border-blue-100 shadow-sm">
+                        {['道具','道具'].map((t,i)=><span key={i} className="w-10 py-1 bg-blue-100 text-blue-700 rounded text-[10px] font-bold text-center block">{t}</span>)}
+                      </div>
+                      <ArrowRight size={12} className="text-slate-300"/>
+                      <div className="flex gap-1 p-1 bg-white rounded border border-emerald-100 shadow-sm">
+                        {['場所','場所','場所','場所'].map((t,i)=><span key={i} className="w-10 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold text-center block">{t}</span>)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+        /**
+         * ★ Updated Slide: Exp 2 Vector Concept
+         */
+        const Exp2VectorConceptSlide = () => (
+          <div className="space-y-6 h-full flex flex-col justify-center">
+            <h2 className="text-3xl font-bold border-l-8 border-indigo-600 pl-6 text-slate-800">
+              Exp 2: 文の意味軌跡 (Trajectory)
+            </h2>
+            <p className="text-lg text-slate-600">
+                3文節からなる短文を、高次元意味空間上の<span className="font-bold text-indigo-600">点列（Trajectory）</span>として定義する。
+            </p>
+
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-slate-200 relative overflow-hidden min-h-[400px] flex items-center justify-center">
+                {/* Simulated 2D Semantic Space */}
+                <div className="absolute inset-0 grid grid-cols-[repeat(20,minmax(0,1fr))] grid-rows-[repeat(10,minmax(0,1fr))] opacity-10 pointer-events-none">
+                    {Array.from({length:200}).map((_,i) => (
+                        <div key={i} className="border-[0.5px] border-slate-300"></div>
+                    ))}
+                </div>
+
+                <div className="relative w-full max-w-2xl h-64">
+                    {/* Axis Labels */}
+                    <div className="absolute top-0 right-0 text-xs font-mono text-slate-400">Dim 2 (e.g. Activity)</div>
+                    <div className="absolute bottom-0 left-0 text-xs font-mono text-slate-400">Dim 1 (e.g. Animacy)</div>
+
+                    {/* Nodes */}
+                    {/* V1: 犬と */}
+                    <div className="absolute bottom-10 left-10 flex flex-col items-center group">
+                        <div className="w-4 h-4 bg-blue-500 rounded-full shadow-lg ring-4 ring-blue-100 z-10"></div>
+                        <div className="mt-2 text-sm font-bold bg-white/90 px-2 rounded shadow-sm">
+                            <span className="text-blue-600">V1</span>: 犬と
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono">Noun A + Particle</div>
+                    </div>
+
+                    {/* V2: 遊ぶ */}
+                    <div className="absolute top-10 left-1/3 flex flex-col items-center group">
+                        <div className="w-4 h-4 bg-slate-600 rounded-full shadow-lg ring-4 ring-slate-100 z-10"></div>
+                        <div className="mt-2 text-sm font-bold bg-white/90 px-2 rounded shadow-sm">
+                            <span className="text-slate-600">V2</span>: 遊ぶ
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono">Verb</div>
+                    </div>
+
+                    {/* V3: 子供/フライパン */}
+                    <div className="absolute bottom-20 right-10 flex flex-col items-center group">
+                         <div className="w-4 h-4 bg-red-500 rounded-full shadow-lg ring-4 ring-red-100 z-10"></div>
+                         <div className="mt-2 text-sm font-bold bg-white/90 px-2 rounded shadow-sm">
+                            <span className="text-red-600">V3</span>: 子供 / フライパン
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono">Noun B (Target)</div>
+                    </div>
+
+                    {/* Connectors (Trajectory) */}
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#cbd5e1" />
+                            </marker>
+                        </defs>
+                        {/* Line V1 -> V2 */}
+                        <line x1="12%" y1="80%" x2="35%" y2="20%" stroke="#94a3b8" strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead)" />
+                        {/* Line V2 -> V3 */}
+                        <line x1="35%" y1="20%" x2="85%" y2="70%" stroke="#94a3b8" strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead)" />
+                    </svg>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h4 className="font-bold text-indigo-600 mb-1 flex items-center gap-2"><Brain size={16}/> Semantic Space</h4>
+                    <p className="text-xs text-slate-600">
+                        BERT embedding (token平均 or [CLS]) を使用。<br/>
+                        単語の意味的な位置関係を反映。
+                    </p>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h4 className="font-bold text-emerald-600 mb-1 flex items-center gap-2"><Layers size={16}/> Schema Space</h4>
+                    <p className="text-xs text-slate-600">
+                        カテゴリ (One-hot) や 動詞タイプによる空間。<br/>
+                        「動物→動作→人」のような規範的遷移を定義。
+                    </p>
+                </div>
+            </div>
+          </div>
+        );
+
+        /**
+         * ★ Updated Slide: Exp 2 Metrics
+         */
+        const Exp2MetricsSlide = () => (
+          <div className="space-y-6 h-full flex flex-col justify-center">
+            <h2 className="text-3xl font-bold border-l-8 border-indigo-600 pl-6 text-slate-800">
+              Exp 2: 軌跡の特徴量抽出
+            </h2>
+            <p className="text-slate-600">
+                ベクトル列 <span className="font-math">(v<sub>1</sub>, v<sub>2</sub>, v<sub>3</sub>)</span> から、
+                文の意味的な「動き」を表すスカラー指標を算出する。
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                {/* Metric 1: Length */}
+                <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 flex flex-col">
+                    <div className="text-indigo-600 font-bold mb-2 flex items-center gap-2">
+                        <Move size={20}/> 総移動距離 (Length)
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg mb-4 flex-1 flex items-center justify-center">
+                         <div className="font-math text-lg text-center">
+                            L = ||v<sub>2</sub> - v<sub>1</sub>|| + ||v<sub>3</sub> - v<sub>2</sub>||
+                         </div>
+                    </div>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                        意味空間上でどれだけ「遠く」へ移動したか。<br/>
+                        <span className="font-bold">解釈:</span> 意味的情報量の総量、あるいは文脈展開の大きさ。
+                    </p>
+                </div>
+
+                {/* Metric 2: Curvature */}
+                <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 flex flex-col">
+                    <div className="text-indigo-600 font-bold mb-2 flex items-center gap-2">
+                        <GitCommit size={20}/> 曲率 (Curvature)
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg mb-4 flex-1 flex items-center justify-center">
+                         <div className="font-math text-lg text-center">
+                            θ = arccos( <span className="inline-block border-b border-black">a ・ b</span><br/>||a|| ||b|| )
+                         </div>
+                    </div>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                        ベクトル変化方向の角度。<br/>
+                        <span className="font-bold">解釈:</span> 文脈の急激な転換。<br/>
+                        真っ直ぐ (θ≈0) vs 方向転換 (θ大)
+                    </p>
+                </div>
+
+                {/* Metric 3: Deviation */}
+                <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 flex flex-col">
+                    <div className="text-indigo-600 font-bold mb-2 flex items-center gap-2">
+                        <AlertCircle size={20}/> Canonical Deviation
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg mb-4 flex-1 flex flex-col items-center justify-center gap-2">
+                         <div className="font-math text-sm text-slate-400">Canonical Path μ = (μ<sub>1</sub>, μ<sub>2</sub>, μ<sub>3</sub>)</div>
+                         <div className="font-math text-lg font-bold">
+                            Dev = Dist( Path, μ )
+                         </div>
+                    </div>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                        「典型的な文（Congruent）」の軌跡からの乖離度。<br/>
+                        <span className="font-bold">解釈:</span> Schema/Script からの逸脱、Surprisal。
+                    </p>
+                </div>
+            </div>
+
+            <div className="mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center gap-4">
+                <div className="bg-indigo-600 text-white p-2 rounded-full font-bold text-xs whitespace-nowrap">GOAL</div>
+                <p className="text-sm text-indigo-900">
+                    これらの指標に基づいて作成した <span className="font-bold">Trajectory Model RDMs</span> を、
+                    EEGデータ（特にN400/P600成分）とRSAで比較する。
+                </p>
+            </div>
+          </div>
+        );
+
+        /**
+         * ★ Updated Slide: Exp 2 RSA Hypothesis
+         */
+        const Exp2RSATrajectorySlide = () => (
+          <div className="space-y-6 h-full flex flex-col justify-center">
+            <h2 className="text-3xl font-bold border-l-8 border-indigo-600 pl-6 text-slate-800">
+              Exp 2: Trajectory RSA 仮説
+            </h2>
+            <p className="text-slate-600 mb-4">
+                各時間窓（Time-resolved）において、EEGの表象構造がどの Trajectory 指標と最も強く相関するかを検証する。
+            </p>
+
+            <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 relative">
+                {/* Time Axis */}
+                <div className="absolute top-0 left-12 bottom-0 w-px bg-slate-200 border-l border-dashed border-slate-300"></div>
+
+                {/* N400 Window */}
+                <div className="relative mb-12 ml-16">
+                    <div className="absolute -left-[4.5rem] top-0 bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-1 rounded">300-500ms</div>
+                    <h3 className="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-indigo-500"></span> N400 Window
+                    </h3>
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div className="flex gap-4">
+                            <div className="flex-1">
+                                <h4 className="font-bold text-sm text-indigo-600 mb-1">Target Models</h4>
+                                <ul className="text-sm text-slate-600 list-disc list-inside space-y-1">
+                                    <li>Semantic Distance (L)</li>
+                                    <li>Surprisal / LLM Entropy</li>
+                                </ul>
+                            </div>
+                            <div className="w-px bg-slate-200"></div>
+                            <div className="flex-[1.5]">
+                                <h4 className="font-bold text-sm text-slate-700 mb-1">Hypothesis</h4>
+                                <p className="text-sm text-slate-500">
+                                    N400の振幅変調・パターン非類似度は、
+                                    <span className="font-bold text-slate-800">意味空間上の移動距離</span>や
+                                    <span className="font-bold text-slate-800">予測可能性（Surprisal）</span>
+                                    を反映する。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* P600 Window */}
+                <div className="relative ml-16">
+                    <div className="absolute -left-[4.5rem] top-0 bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded">500-800ms</div>
+                    <h3 className="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-emerald-500"></span> P600 Window
+                    </h3>
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div className="flex gap-4">
+                            <div className="flex-1">
+                                <h4 className="font-bold text-sm text-emerald-600 mb-1">Target Models</h4>
+                                <ul className="text-sm text-slate-600 list-disc list-inside space-y-1">
+                                    <li>Canonical Deviation (Dev)</li>
+                                    <li>Schema/Category Transition</li>
+                                    <li>Trajectory Curvature (θ)</li>
+                                </ul>
+                            </div>
+                            <div className="w-px bg-slate-200"></div>
+                            <div className="flex-[1.5]">
+                                <h4 className="font-bold text-sm text-slate-700 mb-1">Hypothesis</h4>
+                                <p className="text-sm text-slate-500">
+                                    P600帯域の活動は、文法的・スキーマ的再解析を反映し、
+                                    <span className="font-bold text-slate-800">正準軌跡からの逸脱度</span>
+                                    や
+                                    <span className="font-bold text-slate-800">構造的な急転換</span>
+                                    と高い相関を示す。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+        );
+
+        const SummarySlide = () => (
+          <div className="space-y-8 text-center flex flex-col items-center justify-center h-full">
+            <div className="mb-6">
+                <div className="inline-block p-4 rounded-full bg-indigo-50 text-indigo-600 mb-4">
+                    <CheckCircle size={48} />
+                </div>
+                <h2 className="text-4xl font-bold text-slate-900">まとめと展望</h2>
+            </div>
+            
+            <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+              <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 hover:border-indigo-200 transition-colors">
+                <h3 className="font-bold text-lg text-indigo-600 mb-2 flex items-center gap-2">
+                    <Type size={20}/> 1. Personalization
+                </h3>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                  個人の流暢性データに基づく刺激選定により、従来のコーパス依存手法よりも高精度な（S/N比の高い）
+                  <span className="font-bold">個人化意味マップ</span>を構築。
+                </p>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 hover:border-indigo-200 transition-colors">
+                <h3 className="font-bold text-lg text-indigo-600 mb-2 flex items-center gap-2">
+                    <TrendingUp size={20}/> 2. Vector Trajectory
+                </h3>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                  文を単なる単語の総和ではなく、意味空間上の<span className="font-bold">軌跡</span>として捉える新しい解析フレームワーク。
+                  移動距離・曲率・逸脱度という幾何学的指標を導入。
+                </p>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 hover:border-indigo-200 transition-colors md:col-span-2">
+                <h3 className="font-bold text-lg text-indigo-600 mb-2 flex items-center gap-2">
+                    <Brain size={20}/> 3. N400/P600 Disassociation
+                </h3>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                  RSAを通じて、N400（意味的予測・距離）とP600（スキーマ逸脱・再解析）の機能的解離を、
+                  成分の振幅だけでなく<span className="font-bold">「表象幾何学の変遷」</span>として定量的に実証することを目指す。
+                </p>
+              </div>
+            </div>
+            
+            <div className="text-slate-400 pt-12 font-medium text-sm">
+              Thank you for your attention.
+            </div>
+          </div>
+        );
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<SlideDeck />);
+    </script>
+</body>
+</html>

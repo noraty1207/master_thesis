@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Semantic Trajectory RSA Research Proposal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- importmap for ESM -->
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@18.2.0",
+      "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+      "lucide-react": "https://esm.sh/lucide-react@0.263.1"
+    }
+  }
+  </script>
+
+  <!-- Babel -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Fonts -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      background: radial-gradient(circle at top, #e0f2fe 0, #f8fafc 40%, #eef2ff 100%);
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-slide-up {
+      animation: slideUp 0.45s ease-out;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect } from "react";
+    import { createRoot } from "react-dom/client";
+    import {
+      Brain, ChevronLeft, ChevronRight, Activity, Map,
+      Layers, Sigma, TrendingUp, Sparkles, GitCommit,
+      Type, Box, Share2
+    } from "lucide-react";
+
+    // ---------- 共通レイアウト ----------
+
+    const SlideFrame = ({ title, subtitle, children }) => (
+      <div className="h-full flex flex-col">
+        {/* ヘッダー */}
+        <header className="flex items-center justify-between h-16 px-6 md:px-10 bg-white/70 backdrop-blur border-b border-slate-200">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center">
+              <Brain className="text-indigo-600" size={20} />
+            </div>
+            <div>
+              <div className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                Semantic Trajectory RSA
+              </div>
+              <div className="text-sm font-semibold text-slate-800">
+                意味空間の幾何と軌跡で精神疾患を読み解く
+              </div>
+            </div>
+          </div>
+          <div className="hidden md:flex flex-col items-end text-xs text-slate-500">
+            <div>中田 裕太郎（九州大学）</div>
+            <div>Neural geometry × LLM × Psychiatry</div>
+          </div>
+        </header>
+
+        {/* 本文 */}
+        <main className="flex-1 flex items-center justify-center px-4 md:px-10 py-4">
+          <div className="w-full max-w-6xl h-[480px] md:h-[520px] bg-white/80 backdrop-blur rounded-3xl shadow-xl border border-slate-100 p-6 md:p-10 flex flex-col animate-slide-up">
+            <div className="mb-4 md:mb-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-3">
+                <span className="inline-block w-1.5 h-8 rounded-full bg-indigo-500" />
+                {title}
+              </h2>
+              {subtitle && (
+                <p className="mt-2 text-sm md:text-base text-slate-500">
+                  {subtitle}
+                </p>
+              )}
+            </div>
+            <div className="flex-1 overflow-y-auto pr-1">
+              {children}
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+
+    // ---------- 各スライド（1枚1トピック） ----------
+
+    const TitleSlide = () => (
+      <div className="h-full flex flex-col items-center justify-center text-center">
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-indigo-300/40 blur-3xl rounded-full" />
+          <div className="relative inline-flex items-center justify-center w-28 h-28 rounded-3xl bg-white shadow-2xl border border-indigo-100">
+            <Brain size={60} className="text-indigo-600" />
+          </div>
+        </div>
+
+        <h1 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight mb-4">
+          意味空間の<span className="text-indigo-600">幾何学</span>と
+          <br className="hidden md:block" />
+          思考の<span className="text-indigo-600">軌跡</span>を測る
+        </h1>
+        <p className="text-lg md:text-xl text-slate-600 max-w-2xl mb-6">
+          RSA と LLM を用いて、言語・脳活動・精神症状を
+          <span className="font-semibold">共通の表象空間</span>で捉える研究計画
+        </p>
+        <div className="flex flex-wrap justify-center gap-3 text-xs md:text-sm text-slate-500">
+          <span className="px-3 py-1 rounded-full bg-white/80 border border-slate-200">
+            Representational Models (Diedrichsen &amp; Kriegeskorte, 2017)
+          </span>
+          <span className="px-3 py-1 rounded-full bg-white/80 border border-slate-200">
+            Neural Topology (Lin &amp; Kriegeskorte, 2024)
+          </span>
+          <span className="px-3 py-1 rounded-full bg-white/80 border border-slate-200">
+            Thought Trajectories (Nour et al., 2023, 2025)
+          </span>
+          <span className="px-3 py-1 rounded-full bg-white/80 border border-slate-200">
+            Novel Instructions (Peña et al., 2025)
+          </span>
+        </div>
+      </div>
+    );
+
+    const MotivationSlide = () => (
+      <SlideFrame
+        title="モチベーション：意味空間から精神症状を読む"
+        subtitle="言語・脳活動・症状を同一の幾何学／位相構造として扱う"
+      >
+        <div className="grid md:grid-cols-2 gap-8">
+          <div>
+            <h3 className="font-semibold text-slate-800 mb-2">
+              なぜ「意味空間の幾何・軌跡」なのか？
+            </h3>
+            <ul className="list-disc list-inside text-sm md:text-base text-slate-700 space-y-2">
+              <li>精神疾患では、<span className="font-semibold">概念の結びつき方</span>や<span className="font-semibold">思考の流れ</span>が変化する。</li>
+              <li>言語レポートは「思考の軌跡」を間接的に映す最もリッチなデータ源。</li>
+              <li>RSA によって、脳活動を<span className="font-semibold">多次元空間の点配置</span>として記述可能。</li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-semibold text-slate-800 mb-2">
+              目指す統合的な枠組み
+            </h3>
+            <ul className="list-disc list-inside text-sm md:text-base text-slate-700 space-y-2">
+              <li>LLM がもつ高次元の意味表象を<span className="font-semibold">「基準空間」</span>とする。</li>
+              <li>EEG/fMRI の RSA で得られる表象幾何と、言語の軌跡を同じ空間で比較。</li>
+              <li>最終的に、<span className="font-semibold">精神症状の定量指標</span>としての軌跡特性（alignment, momentum, jumpiness など）を抽出。</li>
+            </ul>
+          </div>
+        </div>
+      </SlideFrame>
+    );
+
+    const RSAIntroSlide = () => (
+      <SlideFrame
+        title="背景①：表象モデルと RSA"
+        subtitle="「どのニューロンが何をしているか」ではなく「パターン同士の関係」に注目する"
+      >
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="space-y-3 text-sm md:text-base text-slate-700">
+            <p>
+              Diedrichsen &amp; Kriegeskorte (2017) は、表象モデルを
+              <span className="font-semibold">2 次モーメント行列</span>（分散共分散構造）で定式化し、
+              RSA / PCM / encoding を統一的に位置づけた。
+            </p>
+            <ul className="list-disc list-inside space-y-1.5">
+              <li>条件 × ボクセル／電極の活動パターンを取得。</li>
+              <li>条件間距離（Crossnobis など）から RDM を作成。</li>
+              <li>理論モデル RDM と比較して「どのような情報が表現されているか」を検証。</li>
+            </ul>
+          </div>
+          <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
+            <h4 className="font-semibold text-slate-800 mb-2 flex items-center gap-2">
+              <Layers size={18} className="text-indigo-600" />
+              本研究での RSA の役割
+            </h4>
+            <ul className="list-disc list-inside text-sm text-slate-700 space-y-1.5">
+              <li>Exp1：単語カテゴリの<span className="font-semibold">幾何学・位相構造</span>を EEG から推定。</li>
+              <li>Exp2：文章／タスクセットの<span className="font-semibold">低次元構造</span>や<span className="font-semibold">直交性・抽象度</span>を評価。</li>
+              <li>LLM 意味空間との対応を見ることで、<span className="font-semibold">脳・言語・症状</span>をつなぐ橋渡しにする。</li>
+            </ul>
+          </div>
+        </div>
+      </SlideFrame>
+    );
+
+    const GeoTopoSlide = () => (
+      <SlideFrame
+        title="背景②：幾何と位相（tRSA）"
+        subtitle="距離の「大きさ」よりも、どの刺激がどの刺激と隣り合うかという構造に着目する"
+      >
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="space-y-3 text-sm md:text-base text-slate-700">
+            <p>
+              Lin &amp; Kriegeskorte (2024) は、従来の RDM を
+              <span className="font-semibold">geotopological transform</span> で変換し、
+              中間的な距離スケールに感度を持つ tRSA を提案。
+            </p>
+            <ul className="list-disc list-inside space-y-1.5">
+              <li>非常に近い／遠い距離の差は<span className="font-semibold">情報価値が低い</span>とみなして圧縮。</li>
+              <li>「隣接グラフ」としての近傍関係（トポロジー）を強調。</li>
+              <li>モデル選択において、ノイズや個人差にロバストな指標となることを示した。</li>
+            </ul>
+          </div>
+          <div className="bg-indigo-50/60 rounded-2xl p-5 border border-indigo-100">
+            <h4 className="font-semibold text-slate-800 mb-2 flex items-center gap-2">
+              <Map size={18} className="text-indigo-600" />
+              本研究での利用イメージ
+            </h4>
+            <ul className="list-disc list-inside text-sm text-slate-700 space-y-1.5">
+              <li>Exp1 の単語 RDM に対し、異なる (l, u) を用いた geotopological 変換を適用。</li>
+              <li>カテゴリクラスターのトポロジーが LLM 空間や症状指標とどう対応するかを評価。</li>
+              <li>Exp2 では、タスクセット表象の<span className="font-semibold">直交性／並行性</span>と位相構造を同時に追う。</li>
+            </ul>
+          </div>
+        </div>
+      </SlideFrame>
+    );
+
+    const ThoughtTrajectorySlide = () => (
+      <SlideFrame
+        title="背景③：思考の軌跡としての言語（VECTOR）"
+        subtitle="LLM 表象をタスク特異的な schema space に射影し，思考の幾何を可視化する"
+      >
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="text-sm md:text-base text-slate-700 space-y-2">
+            <p>
+              Nour et al. (2025) は VECTOR フレームワークを提案し，
+              Cinderella 物語などのナラティブを
+              <span className="font-semibold">高次元 LLM 空間 → 低次元 schema 空間</span>の軌跡として解析した。
+            </p>
+            <ul className="list-disc list-inside space-y-1.5">
+              <li>LLM で埋め込み → logistic regression で schema event にデコード。</li>
+              <li>alignment / momentum / jumpiness / forward sequencing などの幾何指標を定義。</li>
+              <li>これらが RT やコミュニケーションの特性（eccentricity）を予測することを示した。</li>
+            </ul>
+          </div>
+          <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
+            <h4 className="font-semibold text-slate-800 mb-2 flex items-center gap-2">
+              <GitCommit size={18} className="text-indigo-600" />
+              本研究へのインスピレーション
+            </h4>
+            <ul className="list-disc list-inside text-sm text-slate-700 space-y-1.5">
+              <li>Exp2 の文読解／タスク実行を，
+                <span className="font-semibold">schema space 上の軌跡</span>として表現。
+              </li>
+              <li>EEG RSA の時間発展と，言語軌跡の alignment / momentum を対応づける。</li>
+              <li>精神疾患では「語の選び方」だけでなく
+                <span className="font-semibold">schema space の traversing パターン</span>が変化すると予想。
+              </li>
+            </ul>
+          </div>
+        </div>
+      </SlideFrame>
+    );
+
+    const ClinicalBackgroundSlide = () => (
+      <SlideFrame
+        title="背景④：統合失調症と意味空間のトラジェクトリ"
+        subtitle="語の連なり方を，意味空間上のパスとして捉える"
+      >
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="text-sm md:text-base text-slate-700 space-y-2">
+            <p>
+              Nour et al. (2023) は，語流暢性課題の応答を fastText 意味空間上の軌跡として解析し，
+              統合失調症患者で<span className="font-semibold">意味類似性に基づくサンプリングが弱い</span>ことを示した。
+            </p>
+            <ul className="list-disc list-inside space-y-1.5">
+              <li>semantic distance に基づく path optimality が低下。</li>
+              <li>optimal パスとの乖離が症状（陰性症状）と関連。</li>
+              <li>MEG の ripple power と意味サンプリング指標が関連することも報告。</li>
+            </ul>
+          </div>
+          <div className="bg-rose-50/70 rounded-2xl p-5 border border-rose-100">
+            <h4 className="font-semibold text-slate-800 mb-2 flex items-center gap-2">
+              <Box size={18} className="text-rose-500" />
+              本研究の臨床的ゴール
+            </h4>
+            <ul className="list-disc list-inside text-sm text-slate-700 space-y-1.5">
+              <li>同様の「軌跡指標」を EEG RSA と LLM を組み合わせて構成。</li>
+              <li>統合失調症だけでなく，自閉スペクトラム症やうつ病に拡張し，
+                <span className="font-semibold">概念空間の異常</span>を定量化。
+              </li>
+              <li>将来的には，Ripple やネットワーク指標とのリンク（ReDisCA 等）も検討。</li>
+            </ul>
+          </div>
+        </div>
+      </SlideFrame>
+    );
+
+    const AimSlide = () => (
+      <SlideFrame
+        title="研究目的：RSA と思考トラジェクトリ解析の統合"
+        subtitle="脳表象の幾何学と，言語で観測される思考の軌跡を一体として評価する"
+      >
+        <ul className="list-disc list-inside text-sm md:text-base text-slate-700 space-y-2">
+          <li>
+            Exp1：EEG を用いて，単語カテゴリの <span className="font-semibold">幾何学・位相構造</span> を RSA / tRSA / PCM で推定。
+          </li>
+          <li>
+            Exp2：文／タスクセットを用いて，
+            <span className="font-semibold">schema space 上の軌跡</span> と EEG RSA の時間発展を対応づける。
+          </li>
+          <li>
+            LLM（日本語 embedding）を用いて，脳・言語・行動を
+            <span className="font-semibold">共通の意味空間</span>に埋め込み，疾患群との比較可能な指標を構成。
+          </li>
+          <li>
+            最終的には，<span className="font-semibold">思考の乱れを「軌跡の幾何」の異常</span>として定量化することを目指す。
+          </li>
+        </ul>
+      </SlideFrame>
+    );
+
+    const Exp0Slide = () => (
+      <SlideFrame
+        title="Exp0：個人化刺激選定（言語流暢性課題）"
+        subtitle="各参加者にとって自然な意味空間の「基底」を作る"
+      >
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="text-sm md:text-base text-slate-700 space-y-2">
+            <ul className="list-disc list-inside space-y-1.5">
+              <li>カテゴリ（動物，道具，人，場所など）ごとに言語流暢性課題を実施。</li>
+              <li>出現頻度・潜時・意味類似度から，
+                <span className="font-semibold">各人にとって代表的な単語</span>を抽出。
+              </li>
+              <li>fastText / LLM embedding を用いて，個人化された意味空間を構成。</li>
+            </ul>
+          </div>
+          <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
+            <h4 className="font-semibold text-slate-800 mb-2 flex items-center gap-2">
+              <Activity size={18} className="text-emerald-600" />
+              Exp1・Exp2 への接続
+            </h4>
+            <ul className="list-disc list-inside text-sm text-slate-700 space-y-1.5">
+              <li>Exp1 の単語刺激セットの候補を，
+                <span className="font-semibold">意味距離・頻度</span>でバランスよく選定。
+              </li>
+              <li>Exp2 の文生成にも，Exp0 で得た語彙を優先的に利用。</li>
+              <li>個人差の大きい意味空間を，LLM 空間と行動から
+                <span className="font-semibold">データ駆動で推定</span>する役割。
+              </li>
+            </ul>
+          </div>
+        </div>
+      </SlideFrame>
+    );
+
+    const Exp1DesignSlide = () => (
+      <SlideFrame
+        title="Exp1：単語提示 EEG 実験デザイン"
+        subtitle="カテゴリ表象の幾何・位相を N400 周辺の電位から推定"
+      >
+        <ul className="list-disc list-inside text-sm md:text-base text-slate-700 space-y-2">
+          <li>刺激：動物・道具・人・場所など 4 カテゴリ × 各 5 単語（Exp0 から選定）。</li>
+          <li>各単語を 20 回程度提示し，SSVEP／RSVP に近いリズムで呈示。</li>
+          <li>一部トライアルでは，意味プライミング構造を入れて N400 の変動を確認。</li>
+          <li>出力：単語 × 時間（0〜800 ms）の電極パターン → Crossnobis 距離で RDM を作成。</li>
+        </ul>
+      </SlideFrame>
+    );
+
+    const Exp1AnalysisSlide = () => (
+      <SlideFrame
+        title="Exp1：RSA / PCM / tRSA 解析パイプライン"
+        subtitle="表象モデルの検証から，位相構造の比較までを一気通貫で行う"
+      >
+        <div className="grid md:grid-cols-2 gap-8">
+          <div>
+            <h4 className="font-semibold text-slate-800 mb-2">
+              RSA / PCM
+            </h4>
+            <ul className="list-disc list-inside text-sm md:text-base text-slate-700 space-y-1.5">
+              <li>single-trial 電圧 or Hilbert 包絡を whiten し，Crossnobis 距離で時系列 RDM を作成。</li>
+              <li>カテゴリモデル・LLM コサイン距離モデルなど複数の表象モデル RDM を比較。</li>
+              <li>PCM によるノイズ天井推定とモデル比較で，どの表象モデルが EEG に最も適合するかを評価。</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold text-slate-800 mb-2">
+              tRSA / トポロジー解析
+            </h4>
+            <ul className="list-disc list-inside text-sm md:text-base text-slate-700 space-y-1.5">
+              <li>Lin &amp; Kriegeskorte (2024) の geotopological transform を適用。</li>
+              <li>近傍グラフの構造（クラスター・橋渡しノードなど）を LLM 空間と比較。</li>
+              <li>これらの指標と行動（意味判断課題）・症状スコアとの関連を探索。</li>
+            </ul>
+          </div>
+        </div>
+      </SlideFrame>
+    );
+
+    const Exp2DesignSlide = () => (
+      <SlideFrame
+        title="Exp2：文／タスクセットの構築（Pena et al. 風）"
+        subtitle="複数要素からなるルール文を用いて，抽象度と次元性の変化を測る"
+      >
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="text-sm md:text-base text-slate-700 space-y-2">
+            <p>
+              Peña et al. (2025) は，novel instruction を trial ごとに組み合わせることで，
+              <span className="font-semibold">タスクセット表象の時間ダイナミクスと次元性</span>を EEG で解析した。
+            </p>
+            <ul className="list-disc list-inside space-y-1.5">
+              <li>Task demand（選択 vs 統合），刺激カテゴリ，注目特徴（色／形）を直交操作。</li>
+              <li>準備期と実行期で表象の抽象度・直交性が変化することを報告。</li>
+            </ul>
+          </div>
+          <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
+            <h4 className="font-semibold text-slate-800 mb-2 flex items-center gap-2">
+              <Type size={18} className="text-indigo-600" />
+              本研究での文構成
+            </h4>
+            <ul className="list-disc list-inside text-sm text-slate-700 space-y-1.5">
+              <li>日本語版の if-then ルール文（例：「もし A で、かつ B なら左キー」）。</li>
+              <li>Exp1 で使ったカテゴリ単語を組み合わせて，
+                <span className="font-semibold">意味的に自然</span>な文を生成（LLM 補助）。
+              </li>
+              <li>準備期（文読解）とターゲット呈示期を EEG で計測し，
+                時間解像度の高い RSA を実施。
+              </li>
+            </ul>
+          </div>
+        </div>
+      </SlideFrame>
+    );
+
+    const Exp2TrajectorySlide = () => (
+      <SlideFrame
+        title="Exp2：LLM ベクトルと軌跡指標"
+        subtitle="VECTOR の schema space の考え方を EEG＋日本語 LLM に移植する"
+      >
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="text-sm md:text-base text-slate-700 space-y-2">
+            <ul className="list-disc list-inside space-y-1.5">
+              <li>各文／試行を LLM で埋め込み，
+                <span className="font-semibold">タスク schema 空間</span>にデコード（ロジスティック回帰など）。
+              </li>
+              <li>参加者ごとの軌跡に対して
+                alignment / momentum / jumpiness / forward sequencing を算出。
+              </li>
+              <li>EEG RSA の時間的クラスターと，
+                schema 軌跡の変化点（「flight / perch」）を対応づける。
+              </li>
+            </ul>
+          </div>
+          <div className="bg-indigo-50/60 rounded-2xl p-5 border border-indigo-100">
+            <h4 className="font-semibold text-slate-800 mb-2 flex items-center gap-2">
+              <Sparkles size={18} className="text-indigo-600" />
+              幾何学的仮説（例）
+            </h4>
+            <ul className="list-disc list-inside text-sm text-slate-700 space-y-1.5">
+              <li>schema space の momentum が高いほど，
+                EEG 上のタスクセット表象の持続性が高い。
+              </li>
+              <li>jumpiness が大きいほど，
+                N400/P600 周辺での再構成コスト（RSA ノイズ増大）が増す。
+              </li>
+              <li>疾患群では，
+                <span className="font-semibold">alignment 低下・jumpiness 増大</span>などがみられると予想。
+              </li>
+            </ul>
+          </div>
+        </div>
+      </SlideFrame>
+    );
+
+    const Exp2GeometryHypSlide = () => (
+      <SlideFrame
+        title="Exp2：表象幾何・位相に関する仮説"
+        subtitle="抽象度・直交性・次元性の時間変化に着目"
+      >
+        <ul className="list-disc list-inside text-sm md:text-base text-slate-700 space-y-2">
+          <li>準備期では，task demand / category / feature の情報が
+            <span className="font-semibold">抽象的・低次元</span>にコードされる（Peña et al., 2025）。
+          </li>
+          <li>ターゲット処理期では，特に干渉が大きい条件で，
+            <span className="font-semibold">直交配置</span>が現れ，干渉を最小化する（orthogonal coding）。
+          </li>
+          <li>tRSA を用いると，この直交性が
+            「距離」そのものよりも
+            <span className="font-semibold">位相構造の変化</span>として強調されると期待される。</li>
+          <li>疾患群では，
+            直交性の形成や抽象度の変化が鈍く，
+            schema space でも EEG でも
+            <span className="font-semibold">次元性の調整不全</span>が観測される可能性がある。
+          </li>
+        </ul>
+      </SlideFrame>
+    );
+
+    const ApplicationSlide = () => (
+      <SlideFrame
+        title="応用：自閉症・統合失調症・うつ病への展開"
+        subtitle="幾何学・位相・軌跡の指標を症状次元にマッピングする"
+      >
+        <div className="grid md:grid-cols-2 gap-8">
+          <div>
+            <h4 className="font-semibold text-slate-800 mb-2">
+              概念空間の異常としての精神症状
+            </h4>
+            <ul className="list-disc list-inside text-sm md:text-base text-slate-700 space-y-1.5">
+              <li>統合失調症：semantic guidance 低下・path optimality 低下（Nour et al., 2023）。</li>
+              <li>自閉症：局所的・細部指向な意味空間の歪み（仮説）。</li>
+              <li>うつ病：思考の停滞や反すうが momentum・jumpiness の異常として表れる可能性。</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold text-slate-800 mb-2 flex items-center gap-2">
+              <Share2 size={18} className="text-indigo-600" />
+              将来的な分析の方向性
+            </h4>
+            <ul className="list-disc list-inside text-sm md:text-base text-slate-700 space-y-1.5">
+              <li>EEG RSA と言語軌跡指標の
+                <span className="font-semibold">連立回帰／潜在変数モデル</span>による症状予測。
+              </li>
+              <li>ReDisCA（Ossadtchi et al., 2024）のようなコンポーネント分解と組み合わせ，
+                リズム・表象の両面から解析。
+              </li>
+              <li>臨床現場で利用可能な
+                <span className="font-semibold">簡易言語課題＋EEG プロトコル</span>への落とし込み。
+              </li>
+            </ul>
+          </div>
+        </div>
+      </SlideFrame>
+    );
+
+    const SummarySlide = () => (
+      <SlideFrame
+        title="まとめ：意味空間の幾何と軌跡から精神機能を読む"
+        subtitle="RSA・tRSA・VECTOR・ReDisCA をつなぐ一つのストーリー"
+      >
+        <ul className="list-disc list-inside text-sm md:text-base text-slate-700 space-y-2 mb-4">
+          <li>背景：表象モデル（D&amp;K 2017），トポロジー（Lin &amp; K 2024），
+            思考軌跡（Nour 2023/2025），タスクセット表象（Peña 2025）。
+          </li>
+          <li>Exp1：単語カテゴリの幾何・位相を EEG RSA / PCM / tRSA で定量化。</li>
+          <li>Exp2：LLM と EEG を用いて，文／タスクセットの schema space 上の軌跡と，
+            表象幾何の時間変化を対応づけ。
+          </li>
+          <li>臨床応用：軌跡指標・トポロジー指標を精神症状と結びつけ，
+            「思考の乱れ」を数理的に記述する。
+          </li>
+        </ul>
+        <div className="mt-4 p-4 rounded-2xl bg-indigo-50/80 border border-indigo-100 flex items-center gap-3">
+          <Sigma className="text-indigo-600" size={22} />
+          <div className="text-sm md:text-base text-slate-800">
+            <span className="font-semibold">今後：</span>
+            実データでの RSA／軌跡解析と並行して，
+            シミュレーション（ニューラルネット・強化学習エージェント）にも同じ指標を適用し，
+            「計算モデル ↔ 脳 ↔ 言語」の 3 者を統合的に比較する。
+          </div>
+        </div>
+      </SlideFrame>
+    );
+
+    // ---------- スライド配列（1枚1トピック） ----------
+
+    const slides = [
+      { component: TitleSlide,             title: "タイトル" },
+      { component: MotivationSlide,        title: "モチベーション" },
+      { component: RSAIntroSlide,          title: "背景①：RSA" },
+      { component: GeoTopoSlide,          title: "背景②：幾何と位相" },
+      { component: ThoughtTrajectorySlide, title: "背景③：思考の軌跡" },
+      { component: ClinicalBackgroundSlide,title: "背景④：臨床" },
+      { component: AimSlide,              title: "研究目的" },
+      { component: Exp0Slide,             title: "Exp0：刺激選定" },
+      { component: Exp1DesignSlide,       title: "Exp1：デザイン" },
+      { component: Exp1AnalysisSlide,     title: "Exp1：解析" },
+      { component: Exp2DesignSlide,       title: "Exp2：デザイン" },
+      { component: Exp2TrajectorySlide,   title: "Exp2：軌跡解析" },
+      { component: Exp2GeometryHypSlide,  title: "Exp2：幾何仮説" },
+      { component: ApplicationSlide,       title: "応用" },
+      { component: SummarySlide,           title: "まとめ" }
+    ];
+
+    // ---------- 全体デッキコンポーネント ----------
+
+    const SlideDeck = () => {
+      const [current, setCurrent] = useState(0);
+
+      const goNext = () => setCurrent(c => Math.min(c + 1, slides.length - 1));
+      const goPrev = () => setCurrent(c => Math.max(c - 1, 0));
+
+      useEffect(() => {
+        const handler = (e) => {
+          if (e.key === "ArrowRight" || e.key === "PageDown") goNext();
+          if (e.key === "ArrowLeft"  || e.key === "PageUp")   goPrev();
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+      }, []);
+
+      const CurrentComp = slides[current].component;
+      const progress = ((current + 1) / slides.length) * 100;
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          {/* コンテンツ */}
+          <div className="flex-1 flex flex-col">
+            <CurrentComp />
+          </div>
+
+          {/* フッター・ナビゲーション */}
+          <footer className="h-16 bg-white/80 backdrop-blur border-t border-slate-200 flex items-center justify-between px-4 md:px-8">
+            <div className="flex items-center gap-4">
+              <div className="text-[11px] font-mono text-slate-400">
+                SLIDE {String(current + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
+              </div>
+              <div className="w-40 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                <div
+                  className="h-full bg-indigo-500 rounded-full transition-all"
+                  style={{ width: progress + "%" }}
+                />
+              </div>
+              <div className="hidden md:flex items-center gap-2 text-[11px] text-slate-400">
+                <Layers size={14} />
+                <span>{slides[current].title}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={goPrev}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-slate-300 text-xs text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40"
+                disabled={current === 0}
+              >
+                <ChevronLeft size={14} />
+                Prev
+              </button>
+              <button
+                onClick={goNext}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-indigo-500 bg-indigo-500 text-xs text-white hover:bg-indigo-600 disabled:opacity-40"
+                disabled={current === slides.length - 1}
+              >
+                Next
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </footer>
+        </div>
+      );
+    };
+
+    const root = createRoot(document.getElementById("root"));
+    root.render(<SlideDeck />);
+  </script>
+</body>
+</html>
